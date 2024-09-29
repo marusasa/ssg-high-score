@@ -1,31 +1,56 @@
+/**
+ * Project url: https://github.com/marusasa/ssg-high-score
+ * License: Free
+ */
+
+/** 
+ * Class representing a high score list. 
+ * */
 class SsgGameObj{
-    constructor(gameId, domElemId){
-        this.gameId = gameId;
-        this.domElemId = domElemId;
-        this.urlBase = 'https://highscore.sasagu.com';
-        this.bottomScore = 0;
-        this.hsList = [];
-        this.scoreToKeep = 0;
-        this.dataLoaded = false;
+    /**
+     * Create an object representing a high score list.
+     * @param {string} highscore_id - highscore_id.
+     * @param {string} dom_elem_id - HTML Dom element id where the high score will be rendered in.
+     */
+    constructor(highscore_id, dom_elem_id){
+        this.highscore_id = highscore_id;
+        this.dom_elem_id = dom_elem_id;
+        this.url_base = 'https://highscore.sasagu.com';
+        this.bottom_score = 0;
+        this.hs_list = [];
+        this.score_to_keep = 0;
+        this.data_loaded = false;
     }
+
+    /**
+     * Chech if a new score is high enough to be added.
+     * @param {number} score 
+     * @returns {boolean} result
+     */
     isNewHS(score){
         let result = false;
-        if(this.dataLoaded && score != 0){
-            if(this.scoreToKeep > this.hsList.length){
-                if(score >= this.bottomScore){
+        if(this.data_loaded && score != 0){
+            if(this.score_to_keep > this.hs_list.length){
+                if(score >= this.bottom_score){
                     result = true;
                 }
             }else{
-                if(score > this.bottomScore){
+                if(score > this.bottom_score){
                     result = true;
                 }
             }
         }
         return result;        
     }
+
+    /**
+     * Add a score to a high score list
+     * @param {number} score 
+     * @param {string} name 
+     */
     addScore(score, name){
         let reqBody = {
-            "gameId": this.gameId,
+            "highscore_id": this.highscore_id,
             "name": name,
             "score": score
         }
@@ -37,7 +62,7 @@ class SsgGameObj{
             body: JSON.stringify(reqBody)
         };
         try{
-            fetch(this.urlBase + '/addscore',obj)
+            fetch(this.url_base + '/add-score',obj)
                 .then((response) => {
                     if (!response.ok) {
                         throw Error(response.statusText);
@@ -46,9 +71,9 @@ class SsgGameObj{
                 })
                 .then((data) => {
                     if(data.success){
-                        this.hsList = data.scores;
-                        this.scoreToKeep = data.score_to_keep;
-                        this.bottomScore = data.bottom_score;
+                        this.hs_list = data.scores;
+                        this.score_to_keep = data.score_to_keep;
+                        this.bottom_score = data.bottom_score;
                         this.render();
                     }else{
                         throw Error(data.errors);
@@ -59,10 +84,13 @@ class SsgGameObj{
             alert("Error adding score. Reason: " + err);
         }
     }
+
+    /**
+     * Retrieves high score list and renders it to screen.
+     */
     reload(){
-        //fetch high score
         try{
-            fetch(this.urlBase + '/scores/' + this.gameId)                
+            fetch(this.url_base + '/scores/' + this.highscore_id)                
                 .then((response) => {
                     if (!response.ok) {
                         throw Error(response.statusText);
@@ -71,10 +99,10 @@ class SsgGameObj{
                 })
                 .then((data) => {
                     if(data.success){
-                        this.hsList = data.scores;
-                        this.scoreToKeep = data.score_to_keep;
-                        this.bottomScore = data.bottom_score;
-                        this.dataLoaded = true;
+                        this.hs_list = data.scores;
+                        this.score_to_keep = data.score_to_keep;
+                        this.bottom_score = data.bottom_score;
+                        this.data_loaded = true;
                         this.render();
                     }else{
                         throw Error(data.errors);
@@ -89,9 +117,13 @@ class SsgGameObj{
             this.renderError();
         }
     }
+
+    /**
+     * Renders the high score list to screen.
+     */
     render(){
         //clear dom children
-        const parent = document.getElementById(this.domElemId);
+        const parent = document.getElementById(this.dom_elem_id);
         while (parent.firstChild) {
             parent.firstChild.remove();
         }
@@ -99,20 +131,24 @@ class SsgGameObj{
         const liChild = document.createElement('li');
         liChild.textContent = ' # SCORE NAME';
         parent.appendChild(liChild);
-        for(let x = 0;x < this.scoreToKeep;x++){
+        for(let x = 0;x < this.score_to_keep;x++){
             let score = 0;
             let name = '..........';
-            if(x < this.hsList.length){
-                score = this.hsList[x].score;
-                name  = this.hsList[x].name;
+            if(x < this.hs_list.length){
+                score = this.hs_list[x].score;
+                name  = this.hs_list[x].name;
             }
             const liChild = document.createElement('li');
             liChild.textContent = String(x+1).padStart(2,' ') + ' ' + String(score).padStart(5,' ') + ' ' + name.padEnd(10,' ');
             parent.appendChild(liChild);
          }
     }
+
+    /**
+     * Renders error message to screen
+     */
     renderError(){
-        const parent = document.getElementById(this.domElemId);
+        const parent = document.getElementById(this.dom_elem_id);
         while (parent.firstChild) {
             parent.firstChild.remove();
         }
@@ -124,22 +160,37 @@ class SsgGameObj{
         parent.appendChild(liChild2);
     }
 }
+/**
+ * A class that can handle multiple high score list for one game.
+ */
 class SsgHighScore {
-    constructor(gameObjArray){
-        this.gameObjArray = [];
+    /**
+     * Constructor
+     * @param {[Object]} game_obj_array - list of SsgGameObj
+     */
+    constructor(game_obj_array){
+        this.game_obj_array = [];
         //validate parameter
-        gameObjArray.forEach(gameObj =>{
+        game_obj_array.forEach(gameObj =>{
             if(gameObj.constructor.name != 'SsgGameObj'){
                 console.error("Invalid High Score parameter object: " + gameObj.constructor.name
                         + ". High Score will not work.");  
             }else{
-                this.gameObjArray.push(gameObj);
+                this.game_obj_array.push(gameObj);
             }
         });
     }
+
+    /**
+     * Checks if a score can be added to any of the high score list.
+     * If this returns 'true', the game should display a dialog 
+     * asking for a name to use.
+     * @param {number} score 
+     * @returns {boolean} result
+     */
     isNewHS(score){
         let result = false;
-        this.gameObjArray.every(gameObj => {
+        this.game_obj_array.every(gameObj => {
             if(gameObj.isNewHS(score)){
                 result = true;
                 return false;   //this breaks out of 'every' loop.
@@ -148,36 +199,36 @@ class SsgHighScore {
         });
         return result;
     }
+
+    /**
+     * Reloads high score data for each games.
+     */
     loadHS(){
-        this.gameObjArray.forEach(gameObj => {
+        this.game_obj_array.forEach(gameObj => {
             gameObj.reload();
         });
     }
+
+    /**
+     * Add a score to the applicable high score list.
+     * Call this after you get the name to use.
+     * @param {number} score 
+     * @param {string} name 
+     */
     addScore(score, name){
-        this.gameObjArray.forEach(gameObj => {
+        this.game_obj_array.forEach(gameObj => {
             if(gameObj.isNewHS(score)){
                 gameObj.addScore(score, name);
             }
         })
     }
-    showHSDialog(score){
-        const elemDiv = document.createElement('div');
-        elemDiv.style.cssText = 'position:absolute;top:0;right:0;width:100%;height:100%;opacity:0.3;z-index:100;background:#000';
-        const elemDivDlg = document.createElement('div');
-        elemDivDlg.innerHTML = `<p>NEW HIGH SCORE!</p>
-                                <p>SCORE: <span id='hs_score_disp'>${score}</span></p>
-                                <p>
-                                    Name: <input type="text" name="nameField" maxlength="10" size="12"
-                                        style="font-size: 32px;margin-bottom: 10px;"  autocomplete="off"><br>
-                                    <input type="button" name="submitButton" value="SUBMIT" style="font-size: 32px;">
-                                    <input type="button" name="cancelButton" value="CANCEL" style="font-size: 32px;">
-                                </p>
-                                `
-        elemDivDlg.className = "center-screen";
-        //document.body.appendChild(elemDiv);
-        document.getElementById('game-loc').appendChild(elemDiv);
-        document.getElementById('game-loc').appendChild(elemDivDlg);
-    }
+
+    /**
+     * Validate the score and the name before you submit it to the server.
+     * @param {number} score 
+     * @param {string} name - max length is 10.
+     * @returns {boolean} result
+     */
     validate(score, name){
         let result = false;
         let errors = [];
