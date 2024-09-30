@@ -39,3 +39,7 @@ if(hsObj.validate(score, name)){
     //an alert dialog will be displayed by the component.
 }
 ```
+
+## License
+
+MIT License

@@ -1,6 +1,9 @@
 /**
  * Project url: https://github.com/marusasa/ssg-high-score
- * License: Free
+ * Version: 1.0
+ * Date: 2024-09-29
+ * Author: Sasagu Maruyama
+ * License: MIT License
  */
 
 /** 
@@ -15,7 +18,7 @@ class SsgGameObj{
     constructor(highscore_id, dom_elem_id){
         this.highscore_id = highscore_id;
         this.dom_elem_id = dom_elem_id;
-        this.url_base = 'https://highscore.sasagu.com';
+        this.url_base = 'https://highscore.sasagu.com/api/v1';
         this.bottom_score = 0;
         this.hs_list = [];
         this.score_to_keep = 0;
